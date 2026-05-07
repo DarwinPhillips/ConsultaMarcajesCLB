@@ -395,10 +395,11 @@ function parseDateTime(str) {
     // YYYY-MM-DD
     y=+p[0]; m=+p[1]-1; d=+p[2];
   } else if (p[2].length === 4) {
-    // DD/MM/YYYY  o  DD-MM-YYYY
+    // DD/MM/YYYY
     d=+p[0]; m=+p[1]-1; y=+p[2];
   } else {
-    return null;
+    // DD/MM/AA — año de 2 dígitos → 2000+aa
+    d=+p[0]; m=+p[1]-1; y=2000 + +p[2];
   }
 
   let h=0, mi=0, s=0;

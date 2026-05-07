@@ -366,27 +366,49 @@ function colIdx(kw) {
   return headers.findIndex(h => h.toLowerCase().includes(k));
 }
 
-/* Parsea fechas en formato DD/MM/YYYY o YYYY-MM-DD */
-function parseFecha(str) {
+/*
+  Parsea un string de fecha/datetime con múltiples formatos posibles:
+  - "DD/MM/YYYY HH:MM:SS"  (más común en exports chilenos)
+  - "DD/MM/YYYY"
+  - "YYYY-MM-DD HH:MM:SS"
+  - "YYYY-MM-DD"
+  - "DD-MM-YYYY HH:MM:SS"
+  Retorna un objeto Date o null.
+*/
+function parseDateTime(str) {
   if (!str) return null;
   str = str.trim();
-  const p = str.split(/[\/\-]/);
-  if (p.length !== 3) return null;
-  let d, m, y;
-  if (p[2].length === 4) { d=+p[0]; m=+p[1]-1; y=+p[2]; }
-  else { y=+p[0]; m=+p[1]-1; d=+p[2]; }
-  const dt = new Date(y, m, d);
-  return isNaN(dt) ? null : dt;
-}
 
-function parseDateTime(fecha, hora) {
-  const d = parseFecha(fecha);
-  if (!d) return null;
-  if (hora) {
-    const hp = hora.split(':');
-    d.setHours(+hp[0]||0, +hp[1]||0, +hp[2]||0);
+  let datePart = str, timePart = '';
+  if (str.includes(' ')) {
+    const idx = str.lastIndexOf(' ');
+    datePart = str.substring(0, idx);
+    timePart = str.substring(idx + 1);
   }
-  return d;
+
+  const sep = datePart.includes('/') ? '/' : '-';
+  const p = datePart.split(sep);
+  if (p.length !== 3) return null;
+
+  let d, m, y;
+  if (p[0].length === 4) {
+    // YYYY-MM-DD
+    y=+p[0]; m=+p[1]-1; d=+p[2];
+  } else if (p[2].length === 4) {
+    // DD/MM/YYYY  o  DD-MM-YYYY
+    d=+p[0]; m=+p[1]-1; y=+p[2];
+  } else {
+    return null;
+  }
+
+  let h=0, mi=0, s=0;
+  if (timePart) {
+    const hp = timePart.split(':');
+    h=+hp[0]||0; mi=+hp[1]||0; s=+hp[2]||0;
+  }
+
+  const dt = new Date(y, m, d, h, mi, s);
+  return isNaN(dt.getTime()) ? null : dt;
 }
 
 /* Convierte string "YYYY-MM-DD" del input date a Date a medianoche */
@@ -396,25 +418,29 @@ function inputToDate(val) {
   return new Date(y, m-1, d);
 }
 
+/* Índice de la columna que contiene fecha (busca "fecha" en el nombre) */
+function colFecha() {
+  return headers.findIndex(h => h.toLowerCase().includes('fecha'));
+}
+
 function search() {
   const uid = document.getElementById('uid').value.trim();
   if (!uid) { document.getElementById('uid').focus(); return; }
   if (!dataLoaded) { setStatus('err', 'Espera que terminen de cargar los datos'); return; }
 
   const iUID   = colIdx('uid');
-  const iFecha = colIdx('fecha');
-  const iHora  = colIdx('reloj');
+  const iFecha = colFecha();
 
   const desde = inputToDate(document.getElementById('fecha-desde').value);
   const hasta = inputToDate(document.getElementById('fecha-hasta').value);
-  if (hasta) hasta.setHours(23,59,59); // incluir el día completo
+  if (hasta) hasta.setHours(23,59,59);
 
   currentRows = allRows.filter(r => {
     const c = iUID >= 0 ? r[iUID] : r[0];
     if (!c || c.trim().toLowerCase() !== uid.toLowerCase()) return false;
 
     if (desde || hasta) {
-      const dt = parseDateTime(r[iFecha], r[iHora]);
+      const dt = parseDateTime(iFecha >= 0 ? r[iFecha] : '');
       if (!dt) return false;
       if (desde && dt < desde) return false;
       if (hasta && dt > hasta) return false;
@@ -438,9 +464,9 @@ function fmtDate(dt) {
 }
 
 function defaultSort() {
-  const iF=colIdx('fecha'), iH=colIdx('reloj'), iES=colIdx('e/s');
+  const iF=colFecha(), iES=colIdx('e/s');
   currentRows.sort((a,b) => {
-    const da=parseDateTime(a[iF],a[iH]), db=parseDateTime(b[iF],b[iH]);
+    const da=parseDateTime(iF>=0?a[iF]:''), db=parseDateTime(iF>=0?b[iF]:'');
     if (da&&db&&da-db!==0) return da-db;
     return (a[iES]||'').localeCompare(b[iES]||'');
   });

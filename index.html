@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Registro de Asistencia — CLB</title>
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #f0efe9;
+  --border: rgba(0,0,0,0.11);
+  --border2: rgba(0,0,0,0.20);
+  --text: #1a1a18;
+  --text2: #5f5e5a;
+  --text3: #999891;
+  --blue: #378ADD;
+  --blue-bg: #E6F1FB;
+  --blue-text: #0C447C;
+  --green-bg: #EAF3DE;
+  --green-text: #3B6D11;
+  --red-bg: #FAECE7;
+  --red-text: #993C1D;
+  --radius: 10px;
+  --radius-sm: 7px;
+  --shadow: 0 1px 8px rgba(0,0,0,0.08);
+  --mono: 'Consolas','SF Mono','Courier New',monospace;
+  --sans: 'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131311;
+    --surface: #1e1e1b;
+    --surface2: #28281f;
+    --border: rgba(255,255,255,0.09);
+    --border2: rgba(255,255,255,0.17);
+    --text: #f0ede4;
+    --text2: #b4b2a9;
+    --text3: #888780;
+    --blue-bg: #0C3A6A;
+    --blue-text: #90C4F0;
+    --green-bg: #1a3a08;
+    --green-text: #9DD160;
+    --red-bg: #4a1b0c;
+    --red-text: #F5C4B3;
+    --shadow: 0 1px 12px rgba(0,0,0,0.4);
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+.wrap { max-width: 1000px; margin: 0 auto; }
+
+/* HEADER */
+.hdr { display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; }
+.hdr-icon {
+  width: 48px; height: 48px; border-radius: var(--radius-sm);
+  background: var(--blue-bg); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; font-size: 26px;
+}
+.hdr h1 { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.hdr p { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 1.4rem;
+  margin-bottom: 1.2rem; box-shadow: var(--shadow);
+}
+
+/* SEARCH */
+.row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.fld { flex: 1; min-width: 200px; }
+.fld label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text2); margin-bottom: 7px;
+}
+.fld input {
+  width: 100%; height: 44px; padding: 0 14px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+  font-size: 15px; font-family: var(--mono);
+  letter-spacing: .07em; text-transform: uppercase;
+  background: var(--surface2); color: var(--text);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.fld input::placeholder {
+  text-transform: none; letter-spacing: 0;
+  color: var(--text3); font-family: var(--sans); font-size: 14px;
+}
+.fld input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(55,138,221,.15);
+}
+.btn {
+  height: 44px; padding: 0 20px;
+  background: var(--surface); border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+  color: var(--text); cursor: pointer; font-family: var(--sans);
+  display: inline-flex; align-items: center; gap: 7px;
+  white-space: nowrap; transition: background .12s;
+}
+.btn:hover { background: var(--surface2); }
+.btn:active { transform: scale(.98); }
+.btn-sq { height: 44px; width: 44px; padding: 0; justify-content: center; font-size: 18px; }
+.btn-primary {
+  background: var(--blue); color: #fff;
+  border-color: var(--blue);
+}
+.btn-primary:hover { background: #2a6fb5; }
+.hint { font-size: 12px; color: var(--text3); margin-top: 9px; }
+
+/* STATUS */
+.status {
+  display: none; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text2); margin-bottom: 1rem;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-load { background: #EF9F27; animation: pulse 1s infinite; }
+.dot-ok   { background: #639922; }
+.dot-err  { background: #E24B4A; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* METRICS */
+.metrics {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px; margin-bottom: 1.2rem;
+}
+.met { background: var(--surface2); border-radius: var(--radius-sm); padding: .85rem 1rem; }
+.met-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); margin-bottom: 5px; }
+.met-val { font-size: 22px; font-weight: 600; line-height: 1; }
+.met-val.sm { font-size: 14px; padding-top: 3px; line-height: 1.4; font-weight: 500; }
+.met-val.mono { font-family: var(--mono); font-size: 12px; word-break: break-all; font-weight: 500; }
+
+/* TABLE CARD */
+.tcard {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow); display: none;
+}
+.twrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  background: var(--surface2); padding: 10px 14px;
+  text-align: left; font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--text2); border-bottom: 0.5px solid var(--border);
+  white-space: nowrap; cursor: pointer; user-select: none;
+  transition: color .1s;
+}
+thead th:hover { color: var(--text); }
+thead th.sorted { color: var(--text); }
+.sarr { display: inline-block; margin-left: 5px; opacity: .3; font-size: 10px; }
+thead th.sorted .sarr { opacity: 1; color: var(--blue); }
+tbody tr { border-bottom: 0.5px solid var(--border); transition: background .08s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+tbody td {
+  padding: 10px 14px; vertical-align: middle;
+  max-width: 200px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600;
+}
+.badge-e { background: var(--green-bg); color: var(--green-text); }
+.badge-s { background: var(--red-bg);   color: var(--red-text);   }
+.tfooter { font-size: 12px; color: var(--text3); padding: .65rem 1rem; text-align: right; border-top: 0.5px solid var(--border); }
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
+
+/* LOADING OVERLAY */
+.loading-msg {
+  display: none; align-items: center; justify-content: center;
+  gap: 10px; padding: 1rem; font-size: 13px; color: var(--text2);
+}
+.spin {
+  width: 18px; height: 18px; border: 2px solid var(--border2);
+  border-top-color: var(--blue); border-radius: 50%;
+  animation: spin .7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-icon">🪪</div>
+    <div>
+      <h1>Registro de Asistencia</h1>
+      <p>Consulta de accesos por UID de tarjeta — Asistencia CLB</p>
+    </div>
+  </div>
+
+  <!-- SEARCH CARD -->
+  <div class="card">
+    <div class="row">
+      <div class="fld">
+        <label>UID Tarjeta</label>
+        <input id="uid" type="text" placeholder="Ingresa el código de la tarjeta"
+               autocomplete="off" spellcheck="false" />
+      </div>
+      <button class="btn btn-primary" id="btn-buscar">🔍 Buscar</button>
+      <button class="btn btn-sq" id="btn-clear" title="Limpiar búsqueda">✕</button>
+      <button class="btn btn-sq" id="btn-reload" title="Recargar datos">↻</button>
+    </div>
+    <p class="hint">Presiona <strong>Enter</strong> para buscar · no distingue mayúsculas/minúsculas</p>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status" id="status">
+    <span class="dot" id="sdot"></span>
+    <span id="smsg"></span>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-msg" id="loading-msg">
+    <div class="spin"></div>
+    <span>Cargando datos desde Google Sheets…</span>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics" id="metrics"></div>
+
+  <!-- TABLE -->
+  <div class="tcard" id="tcard">
+    <div class="twrap"><div id="tinner"></div></div>
+    <div class="tfooter" id="tfooter"></div>
+  </div>
+
+</div>
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGrUOUNxfSDKCrdVdH3rM5A7JUhwe1wsuyhEURNXACroPmdWVT6kBQtGue7TmF_gxpXNnvZLxN3xp6/pub?gid=0&single=true&output=csv';
+
+let headers = [], allRows = [], currentRows = [];
+let sortCol = null, sortDir = 1, dataLoaded = false;
+
+/* ---------- STATUS ---------- */
+function setStatus(type, msg) {
+  const s = document.getElementById('status');
+  s.style.display = 'flex';
+  document.getElementById('sdot').className = 'dot dot-' + type;
+  document.getElementById('smsg').textContent = msg;
+}
+function showLoading(on) {
+  document.getElementById('loading-msg').style.display = on ? 'flex' : 'none';
+}
+
+/* ---------- CSV PARSER ---------- */
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const out = [];
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = []; let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    row.push(cur.trim());
+    out.push(row);
+  }
+  return out;
+}
+
+/* ---------- LOAD ---------- */
+async function loadData() {
+  showLoading(true);
+  document.getElementById('status').style.display = 'none';
+  try {
+    const r = await fetch(CSV_URL + '&t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('Sin datos');
+    headers = rows[0];
+    allRows = rows.slice(1).filter(r => r.some(c => c));
+    dataLoaded = true;
+    setStatus('ok', allRows.length + ' registros cargados · ingresa el UID para buscar');
+  } catch(e) {
+    setStatus('err', 'Error al cargar datos: ' + e.message + '. Verifica tu conexión.');
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* ---------- HELPERS ---------- */
+function colIdx(kw) {
+  const k = kw.toLowerCase();
+  return headers.findIndex(h => h.toLowerCase().includes(k));
+}
+
+function parseDateTime(f, h) {
+  if (!f) return null;
+  const p = f.split(/[\/\-]/);
+  if (p.length !== 3) return null;
+  let d, m, y;
+  if (p[2].length === 4) { d = +p[0]; m = +p[1] - 1; y = +p[2]; }
+  else { y = +p[0]; m = +p[1] - 1; d = +p[2]; }
+  let hr = 0, mi = 0, s = 0;
+  if (h) { const hp = h.split(':'); hr = +hp[0]||0; mi = +hp[1]||0; s = +hp[2]||0; }
+  return new Date(y, m, d, hr, mi, s);
+}
+
+/* ---------- SEARCH ---------- */
+function search() {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) { document.getElementById('uid').focus(); return; }
+  if (!dataLoaded) { setStatus('err', 'Espera que carguen los datos o recarga la página'); return; }
+
+  const iUID = colIdx('uid');
+  currentRows = allRows.filter(r => {
+    const c = iUID >= 0 ? r[iUID] : r[0];
+    return c && c.trim().toLowerCase() === uid.toLowerCase();
+  });
+
+  sortCol = null; sortDir = 1;
+  renderMetrics(uid);
+  renderTable();
+
+  if (!currentRows.length) setStatus('err', `Sin resultados para "${uid}"`);
+  else setStatus('ok', `${currentRows.length} registros encontrados para "${uid}"`);
+}
+
+/* ---------- DEFAULT SORT ---------- */
+function defaultSort() {
+  const iF = colIdx('fecha'), iH = colIdx('reloj'), iES = colIdx('e/s');
+  currentRows.sort((a, b) => {
+    const da = parseDateTime(a[iF], a[iH]);
+    const db = parseDateTime(b[iF], b[iH]);
+    if (da && db && da - db !== 0) return da - db;
+    return (a[iES] || '').localeCompare(b[iES] || '');
+  });
+}
+
+/* ---------- METRICS ---------- */
+function renderMetrics(uid) {
+  const mr = document.getElementById('metrics');
+  if (!currentRows.length) { mr.style.display = 'none'; return; }
+  mr.style.display = 'grid';
+  const iES = colIdx('e/s'), iN = colIdx('nombre'), iUID = colIdx('uid');
+  const ent = currentRows.filter(r => (r[iES]||'').toLowerCase().startsWith('e')).length;
+  const sal = currentRows.filter(r => (r[iES]||'').toLowerCase().startsWith('s')).length;
+  const nom = iN >= 0 ? (currentRows[0][iN] || '—') : '—';
+  const u   = iUID >= 0 ? (currentRows[0][iUID] || uid) : uid;
+  mr.innerHTML = `
+    <div class="met"><div class="met-lbl">Nombre</div><div class="met-val sm">${nom}</div></div>
+    <div class="met"><div class="met-lbl">UID Tarjeta</div><div class="met-val mono">${u}</div></div>
+    <div class="met"><div class="met-lbl">Total</div><div class="met-val">${currentRows.length}</div></div>
+    <div class="met"><div class="met-lbl">Entradas</div><div class="met-val" style="color:#3B6D11">${ent}</div></div>
+    <div class="met"><div class="met-lbl">Salidas</div><div class="met-val" style="color:#993C1D">${sal}</div></div>
+  `;
+}
+
+/* ---------- TABLE ---------- */
+function badgeES(val) {
+  const l = (val || '').toLowerCase();
+  if (l.startsWith('e')) return `<span class="badge badge-e">↪ ${val}</span>`;
+  if (l.startsWith('s')) return `<span class="badge badge-s">↩ ${val}</span>`;
+  return val;
+}
+
+function renderTable() {
+  const card   = document.getElementById('tcard');
+  const inner  = document.getElementById('tinner');
+  const footer = document.getElementById('tfooter');
+
+  if (!currentRows.length) {
+    card.style.display = 'block';
+    inner.innerHTML = '<div class="empty">Sin registros para ese UID</div>';
+    footer.textContent = '';
+    return;
+  }
+
+  if (sortCol === null) defaultSort();
+  else {
+    currentRows.sort((a, b) =>
+      (a[sortCol]||'').localeCompare(b[sortCol]||'', 'es', {numeric: true}) * sortDir
+    );
+  }
+
+  const iES = colIdx('e/s');
+  const ths = headers.map((h, i) => {
+    const s = sortCol === i, arr = s ? (sortDir === 1 ? '▲' : '▼') : '⇅';
+    return `<th class="${s ? 'sorted' : ''}" data-i="${i}">${h}<span class="sarr">${arr}</span></th>`;
+  }).join('');
+
+  const trs = currentRows.map(r => {
+    const tds = headers.map((_, i) => {
+      let v = r[i] || '';
+      if (i === iES) v = badgeES(v);
+      return `<td title="${(r[i]||'').replace(/"/g,'&quot;')}">${v}</td>`;
+    }).join('');
+    return `<tr>${tds}</tr>`;
+  }).join('');
+
+  card.style.display = 'block';
+  inner.innerHTML = `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  footer.textContent = `${currentRows.length} registros · haz clic en una columna para reordenar`;
+
+  inner.querySelectorAll('thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const i = +th.dataset.i;
+      if (sortCol === i) sortDir *= -1; else { sortCol = i; sortDir = 1; }
+      renderTable();
+    });
+  });
+}
+
+/* ---------- EVENTS ---------- */
+document.getElementById('btn-buscar').addEventListener('click', search);
+document.getElementById('uid').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+document.getElementById('btn-clear').addEventListener('click', () => {
+  document.getElementById('uid').value = '';
+  document.getElementById('tcard').style.display = 'none';
+  document.getElementById('metrics').style.display = 'none';
+  document.getElementById('status').style.display = 'none';
+  document.getElementById('uid').focus();
+});
+document.getElementById('btn-reload').addEventListener('click', () => {
+  dataLoaded = false;
+  document.getElementById('tcard').style.display = 'none';
+  document.getElementById('metrics').style.display = 'none';
+  loadData();
+});
+
+/* ---------- INIT ---------- */
+loadData();
+</script>
+</body>
+</html>
